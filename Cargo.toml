@@ -1,0 +1,14 @@
+[package]
+name = "poker-hand-strength-histogram"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cdrs-tokio = { version = "8.1.2", features = ["derive"] }
+itertools = "0.12.1"
+rand = "0.8.5"
+rayon = "1.10.0"
+rs_poker = "2.0.0"
+tokio = "1.36.0"

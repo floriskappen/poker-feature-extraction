@@ -1,0 +1,104 @@
+use rs_poker::core::{Card, Deck, Hand, Rankable, Suit, Value};
+use rand::seq::SliceRandom;
+use itertools::Itertools;
+
+// Returns the character representation of a card's rank.
+pub const RANK_TO_CHAR: &[char] = &['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+
+// Returns the character representation of a card's suit.
+pub const SUIT_TO_CHAR: &[char] = &['s', 'h', 'd', 'c'];
+
+const SUIT_TO_RS_POKER_SUIT: &[u8] = &[0, 2, 3, 1];
+
+// Extracts the suit from a card value.
+pub fn deck_get_suit(card: u8) -> u8 {
+    card & 3
+}
+
+// Extracts the rank from a card value.
+pub fn deck_get_rank(card: u8) -> u8 {
+    card >> 2
+}
+
+pub fn get_hand_from_cards_id(cards_id: &String) -> Hand {
+    let card_numbers: Vec<u8> = cards_id.split(",")
+        .map(|card_string| card_string.trim().parse::<u8>())
+        .filter_map(Result::ok)
+        .collect();
+
+    return Hand::new_with_cards(
+        card_numbers.iter()
+            .map(|card_number| {
+                return Card::new(
+                    Value::from_u8(deck_get_rank(card_number.clone())),
+                    Suit::from_u8(
+                        SUIT_TO_RS_POKER_SUIT[deck_get_suit(card_number.clone()) as usize]
+                    )
+                )
+            })
+            .collect()
+    );
+}
+
+
+pub fn sample_hand_strength(hole_hand: Hand, trials: usize) -> (Vec<u16>, f32) {
+    let mut histogram = vec![0.0; 30];
+    let mut ehs_accumulator: Vec<f32> = vec![];
+    let mut deck = Deck::default();
+    for card in hole_hand.iter() {
+        deck.remove(card);
+    }
+    let mut remaining_deck: Vec<&Card> = deck.iter().collect();
+
+    for i in 0..trials {
+        // Shuffle the remaining deck and draw the rest of the community cards
+        remaining_deck.shuffle(&mut rand::thread_rng());
+        let community_cards: Vec<Card> = remaining_deck.iter().take(5).cloned().map(|&card| card).collect();
+
+        let player_hand = Hand::new_with_cards(
+            hole_hand.iter().chain(community_cards.iter()).cloned().collect()
+        );
+        let player_score = player_hand.rank();
+
+        let mut opponents_beaten: u32 = 0;
+        let mut total_opponent_hands: u32 = 0;
+        for opponent_cards in remaining_deck[5..].iter().combinations(2) {
+            let dereferenced_opponent_cards: Vec<Card> = opponent_cards.into_iter()
+                .map(|&&card| card.clone())
+                .collect();
+
+
+            // Now, chain `dereferenced_opponent_cards` with `community_cards` correctly
+            let vec3: Vec<Card> = dereferenced_opponent_cards.into_iter()
+                .chain(community_cards.iter().cloned())
+                .collect();
+
+            let opponent_hand = Hand::new_with_cards(vec3);
+            let opponent_score = opponent_hand.rank();
+
+            if player_score > opponent_score {
+                opponents_beaten += 2;
+            } else if player_score == opponent_score {
+                opponents_beaten += 1;
+            }
+
+            total_opponent_hands += 1;
+        }
+
+        let hand_strength: f32 = opponents_beaten as f32 / (total_opponent_hands * 2) as f32;
+        ehs_accumulator.push(hand_strength);
+        let bin_index = (hand_strength * (histogram.len() - 1) as f32) as usize;
+        histogram[bin_index] += 1.0;
+    }
+
+    // TODO: Instead of rounding to 2 digits, allow for more and map to cassandra tinyint limits, which are -128 to 127
+    let histogram: Vec<u16> = histogram.iter().map(|&bin| ((bin / trials as f32) * 100.0) as u16).collect();
+    println!("{:?}", histogram);
+    let ehs: f32 = if !ehs_accumulator.is_empty() {
+        ehs_accumulator.iter().sum::<f32>() / ehs_accumulator.len() as f32
+    } else {
+        0.0
+    };
+
+    return (histogram, ehs);
+}
