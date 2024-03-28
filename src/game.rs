@@ -41,31 +41,46 @@ pub fn get_hand_from_cards_id(cards_id: &String) -> Hand {
 }
 
 
-pub fn sample_hand_strength(hole_hand: Hand, trials: usize) -> Vec<i8> {
+pub fn sample_hand_strength(canonical_hand: Hand, trials: usize) -> Vec<i8> {
     let mut histogram = vec![0.0; 30];
     let mut deck = Deck::default();
-    for card in hole_hand.iter() {
+
+    for card in canonical_hand.iter() {
         deck.remove(card);
     }
     let mut remaining_deck: Vec<&Card> = deck.iter().collect();
 
-    for i in 0..trials {
+    let community_cards_known: Vec<Card> = canonical_hand.cards()[2..].to_vec();
+    let player_hole_cards: Vec<Card> = canonical_hand.cards().iter().take(2).cloned().collect_vec();
+    let number_of_community_cards_to_draw = 5 - community_cards_known.len();
+
+    for _ in 0..trials {
         // Shuffle the remaining deck and draw the rest of the community cards
         remaining_deck.shuffle(&mut rand::thread_rng());
-        let community_cards: Vec<Card> = remaining_deck.iter().take(5).cloned().map(|&card| card).collect();
+
+        let community_sample: Vec<Card> = remaining_deck.iter()
+            .take(number_of_community_cards_to_draw)
+            .cloned()
+            .map(|&card| card)
+            .collect();
+        let community_cards: Vec<Card> = community_cards_known.iter()
+            .map(|&card| card)
+            .chain(community_sample.iter().cloned())
+            .collect();
 
         let player_hand = Hand::new_with_cards(
-            hole_hand.iter().chain(community_cards.iter()).cloned().collect()
+            player_hole_cards.iter().chain(community_cards.iter()).cloned().collect()
         );
         let player_score = player_hand.rank();
 
         let mut opponents_beaten: u32 = 0;
         let mut total_opponent_hands: u32 = 0;
-        for opponent_cards in remaining_deck[5..].iter().combinations(2) {
+        let remaining_deck_after_community = remaining_deck[number_of_community_cards_to_draw..].to_vec();
+
+        for opponent_cards in remaining_deck_after_community.iter().combinations(2) {
             let dereferenced_opponent_cards: Vec<Card> = opponent_cards.into_iter()
                 .map(|&&card| card.clone())
                 .collect();
-
 
             // Now, chain `dereferenced_opponent_cards` with `community_cards` correctly
             let vec3: Vec<Card> = dereferenced_opponent_cards.into_iter()
@@ -92,7 +107,6 @@ pub fn sample_hand_strength(hole_hand: Hand, trials: usize) -> Vec<i8> {
     // Round them so they fit in cassandra's tinyint value
     // TODO: Maybe see if we can give them some more resulution as the tinyint can be -128 to 127
     let histogram: Vec<i8> = histogram.iter().map(|&bin| ((bin / trials as f32) * 100.0) as i8).collect();
-    println!("{:?}", histogram);
-
+    // println!("{:?}", histogram);
     return histogram;
 }

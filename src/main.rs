@@ -4,6 +4,7 @@ mod database;
 mod constants;
 mod game;
 
+use std::sync::mpsc::Receiver;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -22,18 +23,25 @@ async fn main() {
     let total_batches: Arc<Mutex<u32>> = Arc::new(Mutex::new(0));
 
     // Step 1: Set up a Tokio channel
-    let (tx, mut rx) = mpsc::channel(32); // Adjust the channel size as needed
-
+    let (tx, mut rx) = mpsc::channel::<Vec<DatabasePokerHand>>(32); // Adjust the channel size as needed
+    
     // Step 2: Spawn an async listener task
     tokio::spawn(async move {
         while let Some(batch) = rx.recv().await {
             let session = create_session().await;
+            let max_batch_size = 40;
+
             // Async database operation
-            update_batch(&session, batch).await;
+            for db_batch in batch.chunks(max_batch_size) {
+                update_batch(&session, db_batch.to_vec()).await;
+            }
         }
     });
 
-    let mut rows: Vec<DatabasePokerHand> = retrieve_batch(&session, None).await;
+    let starting_value: i64 = -4770719874442349035;
+    let mut rows: Vec<DatabasePokerHand> = retrieve_batch(&session, Some(starting_value)).await;
+
+    // let mut rows: Vec<DatabasePokerHand> = retrieve_batch(&session, None).await;
     while rows.len() > 0 {
         // Use Rayon's parallel iterator to process each row in parallel
         rows.par_iter().for_each(|row| {
@@ -55,11 +63,10 @@ async fn main() {
                 let _ = tx.try_send(results_to_update);
     
                 *total_batches_guard += 1;
-                println!("Generated and updated histograms for batch #{}", total_batches_guard);
+                println!("Generated and updated histograms for update sub-batch batch #{}", total_batches_guard);
             }
     
         });
-
         rows = retrieve_batch(&session, Some(rows[rows.len()-1].token.unwrap())).await;
     }
 

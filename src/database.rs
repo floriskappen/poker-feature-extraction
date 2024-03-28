@@ -46,9 +46,9 @@ pub async fn retrieve_batch(
 ) -> Vec<DatabasePokerHand> {
     let query: String;
     if let Some(token_value) = last_token_value {
-        query = format!("SELECT cards_id, histogram, token(cards_id) FROM {}.{} WHERE token(cards_id) > {} LIMIT {};", DATABASE_KEYSPACE, DATABASE_TABLE, token_value, RETRIEVE_BATCH_SIZE);
+        query = format!("SELECT cards_id, token(cards_id) FROM {}.{} WHERE token(cards_id) > {} LIMIT {};", DATABASE_KEYSPACE, DATABASE_TABLE, token_value, RETRIEVE_BATCH_SIZE);
     } else {
-        query = format!("SELECT cards_id, histogram, token(cards_id) FROM {}.{} LIMIT {};", DATABASE_KEYSPACE, DATABASE_TABLE, RETRIEVE_BATCH_SIZE);
+        query = format!("SELECT cards_id, token(cards_id) FROM {}.{} LIMIT {};", DATABASE_KEYSPACE, DATABASE_TABLE, RETRIEVE_BATCH_SIZE);
     }
 
     let rows = session.query(query)
