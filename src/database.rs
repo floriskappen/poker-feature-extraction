@@ -16,7 +16,7 @@ pub type DatabasePager<'a> = SessionPager<'a, TransportTcp, TcpConnectionManager
 #[derive(Clone, Debug, IntoCdrsValue, TryFromRow, PartialEq)]
 pub struct DatabasePokerHand {
     pub cards_id: String,
-    pub histogram: Option<Vec<i32>>,
+    pub histogram: Option<Vec<i8>>,
     pub token: Option<i64>
 }
 
@@ -24,7 +24,7 @@ impl DatabasePokerHand {
     fn into_query_values(self) -> QueryValues {
         // **IMPORTANT NOTE:** query values should be WITHOUT NAMES
         // https://github.com/apache/cassandra/blob/trunk/doc/native_protocol_v4.spec#L413
-        query_values!(self.cards_id)
+        query_values!(self.histogram, self.cards_id)
     }
 }
 
@@ -74,17 +74,21 @@ pub async fn retrieve_batch(
         })
         .collect();
 
+    if result.len() > 0 {
+        println!("GOT BATCH: {:?}", result[result.len()-1].token);
+    } else {
+        println!("RESULTS EMPTY!! LAST BATCH DONE")
+    }
     return result;
 }
 
 pub async fn update_batch(
     session: &DatabaseSession,
     hands: Vec<DatabasePokerHand>,
-    table: &String,
 ) {
     let mut batch = BatchQueryBuilder::new();
     for hand in hands {
-        let query = format!("UPDATE INTO poker_hands.{} SET histogram = ? WHERE cards_id = ?", table);
+        let query = format!("UPDATE {}.{} SET histogram = ? WHERE cards_id = ?", DATABASE_KEYSPACE, DATABASE_TABLE);
         batch = batch.add_query(query, hand.into_query_values());
     }
 

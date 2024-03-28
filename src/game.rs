@@ -41,9 +41,8 @@ pub fn get_hand_from_cards_id(cards_id: &String) -> Hand {
 }
 
 
-pub fn sample_hand_strength(hole_hand: Hand, trials: usize) -> (Vec<u16>, f32) {
+pub fn sample_hand_strength(hole_hand: Hand, trials: usize) -> Vec<i8> {
     let mut histogram = vec![0.0; 30];
-    let mut ehs_accumulator: Vec<f32> = vec![];
     let mut deck = Deck::default();
     for card in hole_hand.iter() {
         deck.remove(card);
@@ -86,19 +85,14 @@ pub fn sample_hand_strength(hole_hand: Hand, trials: usize) -> (Vec<u16>, f32) {
         }
 
         let hand_strength: f32 = opponents_beaten as f32 / (total_opponent_hands * 2) as f32;
-        ehs_accumulator.push(hand_strength);
         let bin_index = (hand_strength * (histogram.len() - 1) as f32) as usize;
         histogram[bin_index] += 1.0;
     }
 
-    // TODO: Instead of rounding to 2 digits, allow for more and map to cassandra tinyint limits, which are -128 to 127
-    let histogram: Vec<u16> = histogram.iter().map(|&bin| ((bin / trials as f32) * 100.0) as u16).collect();
+    // Round them so they fit in cassandra's tinyint value
+    // TODO: Maybe see if we can give them some more resulution as the tinyint can be -128 to 127
+    let histogram: Vec<i8> = histogram.iter().map(|&bin| ((bin / trials as f32) * 100.0) as i8).collect();
     println!("{:?}", histogram);
-    let ehs: f32 = if !ehs_accumulator.is_empty() {
-        ehs_accumulator.iter().sum::<f32>() / ehs_accumulator.len() as f32
-    } else {
-        0.0
-    };
 
-    return (histogram, ehs);
+    return histogram;
 }
