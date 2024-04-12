@@ -2,6 +2,8 @@ use rs_poker::core::{Card, Deck, Hand, Rankable, Suit, Value};
 use rand::seq::SliceRandom;
 use itertools::Itertools;
 
+use crate::encode::decode_cards;
+
 // Returns the character representation of a card's rank.
 pub const RANK_TO_CHAR: &[char] = &['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
 
@@ -20,11 +22,8 @@ pub fn deck_get_rank(card: u8) -> u8 {
     card >> 2
 }
 
-pub fn get_hand_from_cards_id(cards_id: &String) -> Hand {
-    let card_numbers: Vec<u8> = cards_id.split(",")
-        .map(|card_string| card_string.trim().parse::<u8>())
-        .filter_map(Result::ok)
-        .collect();
+pub fn get_hand_from_cards_id(cards_id: i64) -> Hand {
+    let card_numbers: Vec<u8> = decode_cards(cards_id);
 
     return Hand::new_with_cards(
         card_numbers.iter()

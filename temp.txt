@@ -4,117 +4,22 @@ AND: DatabasePokerHand { cards_id: "24,36", histogram: Some([0, 1, 3, 1, 5, 4, 4
 169
 1286792
 55190538
+2428287420
 
-GOT BATCH: Some(-5529774954194634130)
-Generated and updated histograms for update sub-batch batch #74
-GOT BATCH: Some(-5515408359427675742)
-Generated and updated histograms for update sub-batch batch #75
-GOT BATCH: Some(-5501014526021716992)
-Generated and updated histograms for update sub-batch batch #76
-GOT BATCH: Some(-5486808648956668138)
-Generated and updated histograms for update sub-batch batch #77
-GOT BATCH: Some(-5472058973492718286)
-Generated and updated histograms for update sub-batch batch #78
-GOT BATCH: Some(-5457445575105077437)
-Generated and updated histograms for update sub-batch batch #79
-GOT BATCH: Some(-5443149893424862914)
-Generated and updated histograms for update sub-batch batch #80
-GOT BATCH: Some(-5429181995115371202)
-Generated and updated histograms for update sub-batch batch #81
-GOT BATCH: Some(-5414725732662866022)
-Generated and updated histograms for update sub-batch batch #82
-GOT BATCH: Some(-5400391872706366302)
-Generated and updated histograms for update sub-batch batch #83
-GOT BATCH: Some(-5386184052840639042)
-Generated and updated histograms for update sub-batch batch #84
-GOT BATCH: Some(-5371421501702220569)
-Generated and updated histograms for update sub-batch batch #85
-GOT BATCH: Some(-5357106119674464963)
-Generated and updated histograms for update sub-batch batch #86
-GOT BATCH: Some(-5342112627687523052)
-Generated and updated histograms for update sub-batch batch #87
-GOT BATCH: Some(-5327439866701320174)
-Generated and updated histograms for update sub-batch batch #88
-GOT BATCH: Some(-5313352154664564175)
-Generated and updated histograms for update sub-batch batch #89
-GOT BATCH: Some(-5298845051970594328)
-Generated and updated histograms for update sub-batch batch #90
-GOT BATCH: Some(-5284446167399778963)
-Generated and updated histograms for update sub-batch batch #91
-GOT BATCH: Some(-5270784173896549656)
-Generated and updated histograms for update sub-batch batch #92
-GOT BATCH: Some(-5256356003606834728)
-Generated and updated histograms for update sub-batch batch #93
-GOT BATCH: Some(-5242480502844107459)
-Generated and updated histograms for update sub-batch batch #94
-GOT BATCH: Some(-5227839253499538200)
-Generated and updated histograms for update sub-batch batch #95
-GOT BATCH: Some(-5212414675536795209)
-Generated and updated histograms for update sub-batch batch #96
-GOT BATCH: Some(-5198142572363513751)
-Generated and updated histograms for update sub-batch batch #97
-GOT BATCH: Some(-5184399222442496001)
-Generated and updated histograms for update sub-batch batch #98
-GOT BATCH: Some(-5169409919439092667)
-Generated and updated histograms for update sub-batch batch #99
-GOT BATCH: Some(-5155270175465751023)
-Generated and updated histograms for update sub-batch batch #100
-GOT BATCH: Some(-5140994229569812588)
-Generated and updated histograms for update sub-batch batch #101
-GOT BATCH: Some(-5125944197557565177)
-Generated and updated histograms for update sub-batch batch #102
-GOT BATCH: Some(-5111404818090072885)
-Generated and updated histograms for update sub-batch batch #103
-GOT BATCH: Some(-5097518149358894098)
-Generated and updated histograms for update sub-batch batch #104
-GOT BATCH: Some(-5083724526920655305)
-Generated and updated histograms for update sub-batch batch #105
-GOT BATCH: Some(-5070502646250569801)
-Generated and updated histograms for update sub-batch batch #106
-GOT BATCH: Some(-5055601766543825408)
-Generated and updated histograms for update sub-batch batch #107
-GOT BATCH: Some(-5041883892731159449)
-Generated and updated histograms for update sub-batch batch #108
-GOT BATCH: Some(-5027371272497081441)
-Generated and updated histograms for update sub-batch batch #109
-GOT BATCH: Some(-5013052900922024608)
-Generated and updated histograms for update sub-batch batch #110
-GOT BATCH: Some(-4999025026191735735)
-Generated and updated histograms for update sub-batch batch #111
-GOT BATCH: Some(-4983884601690128038)
-Generated and updated histograms for update sub-batch batch #112
-GOT BATCH: Some(-4970402918886517380)
-Generated and updated histograms for update sub-batch batch #113
-GOT BATCH: Some(-4955620440648681033)
-Generated and updated histograms for update sub-batch batch #114
-GOT BATCH: Some(-4941130697512742495)
-Generated and updated histograms for update sub-batch batch #115
-GOT BATCH: Some(-4926773785577815633)
-Generated and updated histograms for update sub-batch batch #116
-GOT BATCH: Some(-4912263856003709823)
-Generated and updated histograms for update sub-batch batch #117
-GOT BATCH: Some(-4898081745212713996)
-Generated and updated histograms for update sub-batch batch #118
-GOT BATCH: Some(-4883717176576951432)
-Generated and updated histograms for update sub-batch batch #119
-GOT BATCH: Some(-4870098346175786975)
-Generated and updated histograms for update sub-batch batch #120
-GOT BATCH: Some(-4855631259987922583)
-Generated and updated histograms for update sub-batch batch #121
-GOT BATCH: Some(-4842233561156948862)
-Generated and updated histograms for update sub-batch batch #122
-GOT BATCH: Some(-4828548140718707925)
-Generated and updated histograms for update sub-batch batch #123
-GOT BATCH: Some(-4813935344267489003)
-Generated and updated histograms for update sub-batch batch #124
-GOT BATCH: Some(-4798894452655588663)
-Generated and updated histograms for update sub-batch batch #125
-GOT BATCH: Some(-4785033050171250232)
-Generated and updated histograms for update sub-batch batch #126
-GOT BATCH: Some(-4770719874442349035)
-Generated and updated histograms for update sub-batch batch #127
-GOT BATCH: Some(-4755540269339034537)
-Generated and updated histograms for update sub-batch batch #128
-GOT BATCH: Some(-4741058869760811222)
-Generated and updated histograms for update sub-batch batch #129
-GOT BATCH: Some(-4726833285641504871)
+    2 3 4 5 6 7 8 9 T J Q K A
+2   4 1 1 1 1 1 2 2 2 4 4 4 6
+3   1 6 1 1 1 1 2 2 3 4 4 6 6
+4   1 1 6 1 1 2 2 2 3 4 4 6 6
+5   1 1 1 6 3 3 3 3 3 4 4 6 6
+6   1 1 1 1 7 3 3 3 3 4 5 6 6
+7   1 1 1 2 3 7 3 3 5 5 5 6 7
+8   1 1 2 2 3 3 8 3 5 5 5 6 7
+9   2 2 2 2 3 3 3 8 5 5 5 7 7
+T   2 2 2 2 3 3 3 5 8 5 7 7 7
+J   2 2 4 4 4 4 5 5 5 8 7 7 7
+Q   4 4 4 4 4 4 5 5 5 5 8 7 7
+K   4 4 4 6 6 6 6 6 7 7 7 8 7
+A   6 6 6 6 6 6 6 7 7 7 7 7 8
+
+x: suited
+y: unsuited

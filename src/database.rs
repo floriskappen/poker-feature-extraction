@@ -1,6 +1,9 @@
+use std::sync::Arc;
+use std::env;
+
+use cdrs_tokio::authenticators::StaticPasswordAuthenticatorProvider;
 use cdrs_tokio::cluster::session::{TcpSessionBuilder, SessionBuilder, Session};
 use cdrs_tokio::cluster::{NodeTcpConfigBuilder, QueryPager, SessionPager, TcpConnectionManager};
-use cdrs_tokio::frame::TryFromRow;
 use cdrs_tokio::load_balancing::RoundRobinLoadBalancingStrategy;
 use cdrs_tokio::types::IntoRustByName;
 use cdrs_tokio::{query::*, query_values};
@@ -15,7 +18,7 @@ pub type DatabasePager<'a> = SessionPager<'a, TransportTcp, TcpConnectionManager
 
 #[derive(Clone, Debug, IntoCdrsValue, TryFromRow, PartialEq)]
 pub struct DatabasePokerHand {
-    pub cards_id: String,
+    pub cards_id: i64,
     pub histogram: Option<Vec<i8>>,
     pub token: Option<i64>
 }
@@ -28,9 +31,14 @@ impl DatabasePokerHand {
     }
 }
 
-pub async fn create_session() -> DatabaseSession {
+pub async fn create_session() -> Session<TransportTcp, TcpConnectionManager, RoundRobinLoadBalancingStrategy<TransportTcp, TcpConnectionManager>> {
+    let authenticator = Arc::new(StaticPasswordAuthenticatorProvider::new(
+        env::var("DATABASE_USERNAME").unwrap(),
+        env::var("DATABASE_PASSWORD").unwrap(),
+    ));
     let cluster_config = NodeTcpConfigBuilder::new()
-        .with_contact_point("127.0.0.1:9042".into())
+        .with_contact_point(format!("{}:{}", env::var("DATABASE_HOST").unwrap(), env::var("DATABASE_PORT").unwrap()).into())
+        .with_authenticator_provider(authenticator)
         .build()
         .await
         .unwrap();
@@ -61,8 +69,8 @@ pub async fn retrieve_batch(
 
     let result: Vec<DatabasePokerHand> = rows.iter()
         .map(|row| {
-            let cards_id: String = row.get_by_name("cards_id").expect("read cards_id").unwrap();
-            
+            let cards_id: i64 = row.get_by_name("cards_id").expect("read cards_id").unwrap();
+
             // Manually extract the token using the column name as it appears in the query result
             let token: Option<i64> = row.get_by_name("system.token(cards_id)").expect("");
 
