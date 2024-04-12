@@ -28,25 +28,15 @@ async fn main() {
     // Step 2: Spawn an async listener task
     tokio::spawn(async move {
         while let Some(batch) = rx.recv().await {
-
+            let session = create_session().await;
             // Create chunks from the batch
             let chunks = batch.chunks(UPDATE_BATCH_SIZE).collect::<Vec<_>>();
 
-            // Create a vector to hold the futures for concurrent processing
-            let mut futures = Vec::new();
-
             for db_batch in chunks {
-                let session = create_session().await;
                 let db_batch = db_batch.to_vec();
-                // Spawn a new task for each chunk
-                let future = task::spawn(async move {
-                    update_batch(&session, db_batch).await
-                });
-                futures.push(future)
+                update_batch(&session, db_batch).await;
             }
 
-            // Wait for all spawned tasks to complete
-            let _ = join_all(futures).await;
             println!("UPSERTED BATCH");
         }
     });
@@ -74,8 +64,9 @@ async fn main() {
             drop(results_guard);
         });
 
-        let results_guard = results.lock().unwrap();
+        let mut results_guard = results.lock().unwrap();
         let _ = tx.try_send(results_guard.clone().to_vec());
+        results_guard.clear();
 
         rows = retrieve_batch(&session, Some(rows[rows.len()-1].token.unwrap())).await;
     }
