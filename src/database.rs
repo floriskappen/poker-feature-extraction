@@ -1,5 +1,7 @@
 use std::sync::Arc;
+use std::error::Error;
 use std::env;
+use std::time::Duration;
 
 use cdrs_tokio::authenticators::StaticPasswordAuthenticatorProvider;
 use cdrs_tokio::cluster::session::{TcpSessionBuilder, SessionBuilder, Session};
@@ -9,6 +11,7 @@ use cdrs_tokio::types::IntoRustByName;
 use cdrs_tokio::{query::*, query_values};
 use cdrs_tokio::transport::TransportTcp;
 use cdrs_tokio::{IntoCdrsValue, TryFromRow};
+use anyhow::{Result as AnyhowResult, Context};
 
 use crate::constants::{DATABASE_KEYSPACE, DATABASE_TABLE, RETRIEVE_BATCH_SIZE};
 
@@ -31,7 +34,7 @@ impl DatabasePokerHand {
     }
 }
 
-pub async fn create_session() -> Session<TransportTcp, TcpConnectionManager, RoundRobinLoadBalancingStrategy<TransportTcp, TcpConnectionManager>> {
+pub async fn create_session() -> AnyhowResult<DatabaseSession> {
     let authenticator = Arc::new(StaticPasswordAuthenticatorProvider::new(
         env::var("DATABASE_USERNAME").unwrap(),
         env::var("DATABASE_PASSWORD").unwrap(),
@@ -40,18 +43,32 @@ pub async fn create_session() -> Session<TransportTcp, TcpConnectionManager, Rou
         .with_contact_point(format!("{}:{}", env::var("DATABASE_HOST").unwrap(), env::var("DATABASE_PORT").unwrap()).into())
         .with_authenticator_provider(authenticator)
         .build()
-        .await
-        .unwrap();
-    return TcpSessionBuilder::new(RoundRobinLoadBalancingStrategy::new(), cluster_config)
+        .await?;
+    let session = TcpSessionBuilder::new(RoundRobinLoadBalancingStrategy::new(), cluster_config)
         .build()
-        .await
-        .unwrap();
+        .await?;
+
+    return Ok(session)
+}
+
+pub async fn create_session_with_retry() -> DatabaseSession {
+    loop {
+        match create_session().await {
+            Ok(session) => return session,
+            Err(err) => {
+                // Handle session creation error
+                eprintln!("Session creation error: {:?}", err);
+                println!("Retrying session creation after 5s...");
+                tokio::time::sleep(Duration::from_secs(5)).await;
+            }
+        }
+    }
 }
 
 pub async fn retrieve_batch(
     session: &DatabaseSession,
     last_token_value: Option<i64>
-) -> Vec<DatabasePokerHand> {
+) -> Result<Vec<DatabasePokerHand>, cdrs_tokio::types::prelude::Error> {
     let query: String;
     if let Some(token_value) = last_token_value {
         query = format!("SELECT cards_id, token(cards_id) FROM {}.{} WHERE token(cards_id) > {} LIMIT {};", DATABASE_KEYSPACE, DATABASE_TABLE, token_value, RETRIEVE_BATCH_SIZE);
@@ -60,8 +77,7 @@ pub async fn retrieve_batch(
     }
 
     let rows = session.query(query)
-        .await
-        .expect("query")
+        .await?
         .response_body()
         .expect("get body")
         .into_rows()
@@ -87,13 +103,13 @@ pub async fn retrieve_batch(
     } else {
         println!("RESULTS EMPTY!! LAST BATCH DONE")
     }
-    return result;
+    return Ok(result);
 }
 
 pub async fn update_batch(
     session: &DatabaseSession,
     hands: Vec<DatabasePokerHand>,
-) {
+) -> AnyhowResult<()> {
     let mut batch = BatchQueryBuilder::new();
     for hand in hands {
         let query = format!("UPDATE {}.{} SET histogram = ? WHERE cards_id = ?", DATABASE_KEYSPACE, DATABASE_TABLE);
@@ -101,5 +117,7 @@ pub async fn update_batch(
     }
 
     let batch_query = batch.build().expect("Batch builder");
-    session.batch(batch_query).await.expect("Batch query error");
+    session.batch(batch_query).await?;
+
+    Ok(())
 }
