@@ -13,7 +13,7 @@ pub fn decode_cards(encoded_cards: i64) -> Vec<u8> {
     let mut cards: Vec<u8> = vec![];
     let mut encoded_value = encoded_cards;
     while encoded_value > 0 {
-        cards.push((encoded_value % BASE) as u8);
+        cards.push(((encoded_value % BASE) as u8) - 1);
         encoded_value /= BASE;
     }
     cards.reverse();

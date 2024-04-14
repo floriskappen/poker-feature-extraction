@@ -58,7 +58,7 @@ async fn main() {
 
     let mut session = create_session_with_retry().await;
 
-    let starting_value: i64 = -9222361416058844401;
+    let starting_value: i64 = -9222036919943791285;
     // let mut rows: Vec<DatabasePokerHand> = retrieve_batch(&session, Some(starting_value)).await;
 
     let mut rows: Vec<DatabasePokerHand> = vec![];
