@@ -21,7 +21,7 @@ pub struct HandLoader {
     pub folder_path: String,
     pub file_names: Vec<String>,
     pub round: usize,
-    pub current_batch_hands: Vec<i64>,
+    pub current_batch_hands: Vec<Vec<u8>>,
 }
 
 impl HandLoader {
@@ -29,7 +29,6 @@ impl HandLoader {
         let folder_path = std::env::var("CANONICAL_HANDS_FOLDER_PATH")?;
 
         let entries = fs::read_dir(&folder_path)?;
-        let mut first_batch_file_path = "";
         let file_names: Vec<String> = entries.map(|entry| {
             if let Ok(entry) = entry {
                 if let Ok(file_name) = entry.file_name().into_string() {
@@ -53,7 +52,7 @@ impl HandLoader {
 
         if let Some(first_batch_file_name) = first_batch_file_name {
             let file_path = format!("{}/{}", &folder_path, first_batch_file_name);
-            let current_batch_hands = load_data(&file_path)?;
+            let current_batch_hands: Vec<Vec<u8>> = load_data(&file_path)?.iter().map(|&encoded_cards| decode_cards(encoded_cards)).collect();
 
             return Ok(Self {
                 batch_size: current_batch_hands.len(),
@@ -76,8 +75,10 @@ impl HandLoader {
                 .find(|&file_name| file_name == &format!("round_{}_batch_{}.bin", self.round, new_batch))
                 .expect(format!("Could not find file for round {} batch {}", self.round, new_batch).as_str());
             let file_path = format!("{}/{}", &self.folder_path, new_file_name);
-            let current_batch_hands = load_data(&file_path)
-                .expect(format!("Could not load file for round {} batch {}", self.round, new_batch).as_str());
+            let current_batch_hands: Vec<Vec<u8>> = load_data(&file_path)
+                .expect(format!("Could not load file for round {} batch {}", self.round, new_batch).as_str())
+                .iter()
+                .map(|&encoded_cards| decode_cards(encoded_cards)).collect();
 
             self.current_batch += 1;
             self.current_batch_hands = current_batch_hands;
