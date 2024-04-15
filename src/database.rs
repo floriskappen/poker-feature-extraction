@@ -7,6 +7,7 @@ use cdrs_tokio::authenticators::StaticPasswordAuthenticatorProvider;
 use cdrs_tokio::cluster::session::{TcpSessionBuilder, SessionBuilder, Session};
 use cdrs_tokio::cluster::{NodeTcpConfigBuilder, QueryPager, SessionPager, TcpConnectionManager};
 use cdrs_tokio::load_balancing::RoundRobinLoadBalancingStrategy;
+use cdrs_tokio::types::blob::Blob;
 use cdrs_tokio::types::IntoRustByName;
 use cdrs_tokio::{query::*, query_values};
 use cdrs_tokio::transport::TransportTcp;
@@ -22,7 +23,7 @@ pub type DatabasePager<'a> = SessionPager<'a, TransportTcp, TcpConnectionManager
 #[derive(Clone, Debug, IntoCdrsValue, TryFromRow, PartialEq)]
 pub struct DatabasePokerHand {
     pub cards_id: i64,
-    pub histogram: Option<Vec<i8>>,
+    pub histogram: Option<Blob>,
     pub token: Option<i64>
 }
 
@@ -99,7 +100,7 @@ pub async fn retrieve_batch(
         .collect();
 
     if result.len() > 0 {
-        println!("GOT BATCH: {:?}", result[result.len()-1].token);
+        println!("Retrieved batch for token {:?} to {:?}", result[0].token, result[result.len()-1].token);
     } else {
         println!("RESULTS EMPTY!! LAST BATCH DONE")
     }

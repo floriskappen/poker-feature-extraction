@@ -22,6 +22,7 @@ use game::sample_hand_strength;
 use crate::constants::UPDATE_BATCH_SIZE;
 use crate::database::{create_session, create_session_with_retry, retrieve_batch, update_batch, DatabasePokerHand};
 use crate::game::get_hand_from_cards_id;
+use crate::encode::hand_strength_histogram_into_blob;
 
 #[tokio::main]
 async fn main() {
@@ -29,9 +30,9 @@ async fn main() {
 
     // Step 1: Set up a Tokio channel
     let (tx, mut rx) = mpsc::channel::<Vec<DatabasePokerHand>>(32); // Adjust the channel size as needed
-    
+
     // Step 2: Spawn an async listener task
-    tokio::spawn(async move {
+    let listener_handle = tokio::spawn(async move {
         while let Some(batch) = rx.recv().await {
             let mut session = create_session_with_retry().await;
             let chunks = batch.chunks(UPDATE_BATCH_SIZE).collect::<Vec<_>>();
@@ -41,7 +42,7 @@ async fn main() {
                 loop {
                     match update_batch(&session, db_batch.clone()).await {
                         Ok(_) => {
-                            println!("UPSERTED BATCH");
+                            println!("Upserted subbatch into the database");
                             break;
                         }
                         Err(e) => {
@@ -59,12 +60,11 @@ async fn main() {
     let mut session = create_session_with_retry().await;
 
     let starting_value: i64 = -9222036919943791285;
-    // let mut rows: Vec<DatabasePokerHand> = retrieve_batch(&session, Some(starting_value)).await;
 
     let mut rows: Vec<DatabasePokerHand> = vec![];
     loop {
-        // match retrieve_batch(&session, None).await {
-        match retrieve_batch(&session, Some(starting_value)).await {
+        match retrieve_batch(&session, None).await {
+        // match retrieve_batch(&session, Some(starting_value)).await {
             Ok(result_rows) => {
                 rows = result_rows;
                 break;
@@ -87,23 +87,30 @@ async fn main() {
 
     let results: Arc<Mutex<Vec<DatabasePokerHand>>> = Arc::new(Mutex::new(Vec::new()));
 
+    let mut batch = 0;
+
     while rows.len() > 0 {
         // Use Rayon's parallel iterator to process each row in parallel
         rows.par_iter().for_each(|row| {
             let hand = get_hand_from_cards_id(row.cards_id);
             let hand_histogram = sample_hand_strength(hand, 1000);
+            let blob = hand_strength_histogram_into_blob(&hand_histogram);
     
             // Acquire lock to update shared state
             let mut results_guard = results.lock().unwrap();
             results_guard.push(
-                DatabasePokerHand { cards_id: row.cards_id.clone(), histogram: Some(hand_histogram.clone()), token: None }
+                DatabasePokerHand { cards_id: row.cards_id.clone(), histogram: Some(blob), token: None }
             );
             drop(results_guard);
         });
 
+        println!("Calculated hand strengths for batch #{}", batch);
+
         let mut results_guard = results.lock().unwrap();
         let _ = tx.try_send(results_guard.clone().to_vec());
         results_guard.clear();
+
+        println!("Sent batch #{} to be updated in the database", batch);
 
         loop {
             match retrieve_batch(&session, Some(rows[rows.len()-1].token.unwrap())).await {
@@ -126,6 +133,8 @@ async fn main() {
                 }
             }
         };
+
+        batch += 1;
     }
 
     let mut remaining_results = results.lock().unwrap();
@@ -135,4 +144,8 @@ async fn main() {
             let _ = update_batch(&session, db_batch.to_vec()).await;
         }
     }
+
+    println!("All code finished, waiting for last batches in listener to complete for 30s...");
+    let _ = tokio::time::timeout(Duration::from_secs(30), listener_handle).await;
+    println!("Exiting...");
 }
