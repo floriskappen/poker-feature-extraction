@@ -40,7 +40,7 @@ pub fn get_hand_from_cards_id(cards_id: i64) -> Hand {
 }
 
 
-pub fn sample_hand_strength(canonical_hand: Hand, trials: usize) -> Vec<i8> {
+pub fn sample_hand_strength(canonical_hand: Hand, trials: usize) -> Vec<u8> {
     let mut histogram = vec![0.0; 30];
     let mut deck = Deck::default();
 
@@ -105,7 +105,7 @@ pub fn sample_hand_strength(canonical_hand: Hand, trials: usize) -> Vec<i8> {
 
     // Round them so they fit in cassandra's tinyint value
     // TODO: Maybe see if we can give them some more resulution as the tinyint can be -128 to 127
-    let histogram: Vec<i8> = histogram.iter().map(|&bin| ((bin / trials as f32) * 100.0) as i8).collect();
+    let histogram: Vec<u8> = histogram.iter().map(|&bin| ((bin / trials as f32) * 100.0) as u8).collect();
     // println!("{:?}", histogram);
     return histogram;
 }
