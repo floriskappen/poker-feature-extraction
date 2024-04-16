@@ -30,7 +30,7 @@ fn main() {
     init_logger().expect("Failed to initialize logger");
     dotenv().ok();
     
-    let round = 0;
+    let round = 1;
     let mut hand_loader = HandLoader::new(round).expect("Failed to initialize HandLoader");
 
     log::info!("Initialized HandLoader with round {} and batch 0/{}", round, hand_loader.total_batches-1);
@@ -79,6 +79,12 @@ fn main() {
                 .context(&kernel_container.context)
                 .build().unwrap();
 
+            histograms_buffer.cmd()
+                .queue(&kernel_container.queue)
+                .fill(0, None)
+                .enq()
+                .unwrap();
+
             // Generate a seed based on the current time
             let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32 + gpu_batch_index as u32;
 
@@ -99,7 +105,7 @@ fn main() {
                 kernel
                     .cmd()
                     .queue(&kernel_container.queue)
-                    .global_work_size(num_hands)
+                    .global_work_size(gpu_chunk_size)
                     .enq()
                     .unwrap();
             }
@@ -109,10 +115,16 @@ fn main() {
             // Read the data back into a Rust vector
             histograms_buffer.cmd().queue(&kernel_container.queue).read(&mut histograms).enq().unwrap();
 
-            let histograms_unflattened = histograms.chunks(30)
-                .map(|chunk| chunk.iter().map(|&char| char as u8).collect::<Vec<u8>>())
+            let histograms_unflattened_normalized = histograms.chunks(30)
+                .map(|chunk| {
+                    chunk.iter().map(|&bin_value| {
+                        let normalized = ((bin_value as f32 / trials_per_hand as f32) * 100.0) as u8;
+                        return normalized
+                    }).collect::<Vec<u8>>()
+                })
                 .collect_vec();
-            if histograms_unflattened[histograms_unflattened.len()-1].iter().map(|&ch| ch as u32).sum::<u32>() == 0 {
+
+            if histograms_unflattened_normalized[histograms_unflattened_normalized.len()-1].iter().map(|&ch| ch as u32).sum::<u32>() == 0 {
                 log::error!(
                     "Last histogram (and probably others) is not correctly filled. Round {}, batch {}/{} gpu batch {}",
                     round,
@@ -122,7 +134,7 @@ fn main() {
                 );
             }
 
-            hands_analyzed += histograms_unflattened.len();
+            hands_analyzed += histograms_unflattened_normalized.len();
             log::info!(
                 "Finished GPU batch. Round {}, batch {}/{} gpu batch {} hands {}/{} in batch",
                 round,
@@ -133,7 +145,7 @@ fn main() {
                 current_batch_hands
             );
 
-            let histograms_encoded: Vec<Vec<u8>> = histograms_unflattened.iter()
+            let histograms_encoded: Vec<Vec<u8>> = histograms_unflattened_normalized.iter()
                 .map(|histogram| {
                     let encoded_histogram = encode_hand_strength_histogram(histogram);
                     let encoded_histogram_bytes = encoded_histogram.to_bytes_le();

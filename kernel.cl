@@ -292,10 +292,4 @@ __kernel void simulate_poker_hands(
         int bin_index = (int)(hand_strength * (NUM_BINS - 1));
         atomic_inc(&histograms[histogram_offset + bin_index]);
     }
-
-    // Normalize the histogram after all trials
-    for (int i = 0; i < NUM_BINS; i++) {
-        histograms[histogram_offset + i] = (histograms[histogram_offset + i] / (float)trials_per_hand) * 100.0f;
-    }
-
 }
