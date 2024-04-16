@@ -243,7 +243,6 @@ __kernel void simulate_poker_hands(
     // Calculate the number of known community cards
     int known_community_cards_amount = cards_per_hand - 2;
 
-
     for (unsigned int trial = 0; trial < trials_per_hand; trial++) {
         initialize_deck(deck);
 

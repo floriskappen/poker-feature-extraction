@@ -42,12 +42,13 @@ fn main() {
     } else {
         400
     };
-    let cards_per_hand = if round == 0 { 2 } else if round == 1 { 5 } else if round == 3 { 6 } else { 7 };
+    let cards_per_hand = if round == 0 { 2 } else if round == 1 { 5 } else if round == 2 { 6 } else { 7 };
 
     let src = include_str!("../kernel.cl");
     let kernel_container = KernelContainer::new(src);
     let max_work_group_size = kernel_container.device.max_wg_size().unwrap();
     let gpu_chunk_size = max_work_group_size * 32;
+    // let gpu_chunk_size = 10;
     log::info!("Set max group size to {}", gpu_chunk_size);
     
     for batch_index in 0..hand_loader.total_batches {
