@@ -5,32 +5,71 @@ mod kernel;
 
 use dotenv::dotenv;
 use itertools::Itertools;
+use num_bigint::BigUint;
 use ocl::builders::{BufferBuilder, KernelBuilder};
+use std::error::Error;
 use std::fs::File;
-use std::io::BufWriter;
+use std::io::{BufReader, BufWriter};
+use std::process::abort;
 use std::time::{SystemTime, UNIX_EPOCH};
+use serde::{Deserialize, Serialize};
+use rmp_serde::{Deserializer, Serializer};
 
-use crate::encode::encode_hand_strength_histogram;
+use crate::encode::{decode_hand_strength_histogram};
 use crate::kernel::KernelContainer;
 use crate::load::HandLoader;
 use crate::logger::init_logger;
 
 static EXPORT_PATH: &str = "./exports";
 
+#[derive(Serialize, Deserialize)]
+struct Histograms(Vec<Vec<u8>>);
+
 fn save_hand_strength_histograms_to_file(hand_strength_histograms: &Vec<Vec<u8>>, round: usize, batch: usize) -> Result<(), Box<dyn std::error::Error>> {
     let filepath = format!("{}/round_{}_batch_{}.bin", EXPORT_PATH, round, batch);
 
-    let file = File::create(filepath)?;
-    let writer = BufWriter::new(file);
-    bincode::serialize_into(writer, hand_strength_histograms)?;
+    let output_file = File::create(filepath)?;
+
+    let mut writer = BufWriter::new(output_file);
+    let histograms = Histograms(hand_strength_histograms.clone());
+    histograms.serialize(&mut Serializer::new(&mut writer))?;
+
     Ok(())
 }
+
+// fn reserealize_hand_strength_histogram() -> Result<(), Box<dyn Error>> {
+//     // let filepath = "/Users/kade/git/personal/pluribus/poker-k-means/data_in/round_0_batch_0.bin";
+//     let input_filepath = "/Users/kade/git/personal/pluribus/poker-k-means/data_in/round_2_batch_1.bin";
+//     let output_filepath = "/Users/kade/git/personal/pluribus/poker-k-means/data_in/round_2_batch_1_converted.bin";
+
+//     // Open the file in read-only mode.
+//     let input_file = File::open(input_filepath)?;
+
+//     // Create a buffer reader for efficient reading.
+//     let reader = BufReader::new(input_file);
+
+//     // Deserialize the data from the file using bincode.
+//     let hand_strength_histograms_bigints: Vec<Vec<u8>> = bincode::deserialize_from(reader)?;
+//     let hand_strength_histograms: Vec<Vec<u8>> = hand_strength_histograms_bigints.iter().map(|bigint_serialized| {
+//         let bigint_histogram = BigUint::from_bytes_le(bigint_serialized);
+//         let decoded_hsh = decode_hand_strength_histogram(bigint_histogram);
+//         return decoded_hsh;
+//     }).collect();
+//     drop(hand_strength_histograms_bigints);
+//     let histograms = Histograms(hand_strength_histograms);
+
+//     let output_file = File::create(output_filepath)?;
+//     let mut buf_writer = BufWriter::new(output_file);
+//     histograms.serialize(&mut Serializer::new(&mut buf_writer))?;
+
+//     Ok(())
+// }
 
 fn main() {
     init_logger().expect("Failed to initialize logger");
     dotenv().ok();
     
-    let round = 1;
+    let round = 0;
     let mut hand_loader = HandLoader::new(round).expect("Failed to initialize HandLoader");
 
     log::info!("Initialized HandLoader with round {} and batch 0/{}", round, hand_loader.total_batches-1);
@@ -145,14 +184,7 @@ fn main() {
                 current_batch_hands
             );
 
-            let histograms_encoded: Vec<Vec<u8>> = histograms_unflattened_normalized.iter()
-                .map(|histogram| {
-                    let encoded_histogram = encode_hand_strength_histogram(histogram);
-                    let encoded_histogram_bytes = encoded_histogram.to_bytes_le();
-                    return encoded_histogram_bytes
-                }).collect();
-
-            results.extend(histograms_encoded);
+            results.extend(histograms_unflattened_normalized);
         }
 
         save_hand_strength_histograms_to_file(&results, round, batch_index)
