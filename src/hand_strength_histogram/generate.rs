@@ -7,7 +7,8 @@ use crate::load::HandLoader;
 use crate::hand_strength_histogram::save::save_hand_strength_histograms_to_file;
 
 pub fn generate_hand_strength_histograms(round: usize, export_path: &str) {
-    let mut hand_loader = HandLoader::new(round).expect("Failed to initialize HandLoader");
+    let mut hand_loader = HandLoader::new(round).expect("Failed to initialize HandLoader for round");
+
 
     log::info!("Initialized HandLoader with round {} and batch 0/{}", round, hand_loader.total_batches-1);
 
