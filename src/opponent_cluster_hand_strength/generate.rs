@@ -185,7 +185,7 @@ pub fn generate_opponent_cluster_hand_strengths(round: usize, path_export: &str,
             // println!("opponent_cluster_hand_strengths_unflattened: {:?}", opponent_cluster_hand_strengths_unflattened);
 
             hands_analyzed += opponent_cluster_hand_strengths_unflattened.len();
-            if gpu_batch_index > 0 && gpu_batch_index % 500 == 0 {
+            if gpu_batch_index > 0 && gpu_batch_index % 1000 == 0 {
                 log::info!(
                     "Finished GPU batch. Round {}, batch {}/{} gpu batch {} hands {}/{} in batch",
                     round,
