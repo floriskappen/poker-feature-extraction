@@ -1,6 +1,5 @@
 const BASE_CARD: i64 = 53; // Max card + 2
 const BASE_HAND_STRENGTH: u64 = 102;
-use num_bigint::{BigUint, ToBigUint};
 
 pub fn encode_cards(cards: &Vec<u8>) -> i64 {
     let mut encoded_cards: i64 = 0;
@@ -20,14 +19,4 @@ pub fn decode_cards(encoded_cards: i64) -> Vec<u8> {
     }
     cards.reverse();
     return cards;
-}
-
-pub fn encode_hand_strength_histogram(hand_strength_histogram: &Vec<u8>) -> BigUint {
-    let base: BigUint = ToBigUint::to_biguint(&BASE_HAND_STRENGTH).unwrap();
-    let mut encoded_hsh: BigUint = ToBigUint::to_biguint(&0).unwrap();
-    for (i, bucket) in hand_strength_histogram.iter().enumerate() {
-        encoded_hsh = encoded_hsh + ToBigUint::to_biguint(&(bucket + 1)).unwrap() * ToBigUint::to_biguint(&base.pow(i as u32)).unwrap()
-    }
-
-    return encoded_hsh
 }

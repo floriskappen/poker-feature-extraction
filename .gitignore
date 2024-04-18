@@ -19,3 +19,4 @@ Cargo.lock
 /target
 .env
 /exports/*.bin
+.DS_Store

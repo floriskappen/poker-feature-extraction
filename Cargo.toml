@@ -1,5 +1,5 @@
 [package]
-name = "poker-hand-strength-histogram"
+name = "poker-feature-extraction"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,8 +11,8 @@ chrono = "0.4.38"
 dotenv = "0.15.0"
 itertools = "0.12.1"
 log = "0.4.21"
-num-bigint = "0.4.4"
+ocl = "0.19.7"
 rand = "0.8.5"
 rayon = "1.10.0"
-rs_poker = "2.0.0"
-serde = "1.0.197"
+rmp-serde = "1.2.0"
+serde = { version = "1.0.197", features = ["derive"] }

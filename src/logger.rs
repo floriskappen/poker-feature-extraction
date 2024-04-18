@@ -1,5 +1,4 @@
 use log::{Level, Log, Metadata, Record, SetLoggerError};
-use std::io::{self, Write};
 
 struct TimestampLogger;
 
