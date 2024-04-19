@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message OpponentClusterHandStrengthHistograms {
+    repeated bytes data = 1;
+}

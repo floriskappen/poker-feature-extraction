@@ -1,31 +1,12 @@
 
-use hand_isomorphism_rust::deck::card_to_string;
 use ocl::builders::{BufferBuilder, KernelBuilder};
-use rmp_serde::{Deserializer, Serializer};
-use serde::{Deserialize, Serialize};
-use std::fs::{self, File};
-use std::io::{BufReader, BufWriter};
 use std::process::abort;
 use itertools::Itertools;
-use std::error::Error;
 
 use crate::kernel::KernelContainer;
 use crate::load::HandLoader;
+use crate::opponent_cluster_hand_strength::load_labels::load_opponent_cluster_labels;
 use crate::opponent_cluster_hand_strength::save::save_opponent_cluster_hand_strengths_to_file;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Labels(Vec<usize>);
-
-fn load_opponent_cluster_labels(labels_filepath: &str,) -> Result<Labels, Box<dyn Error>> {
-    let input_file = File::open(labels_filepath)?;
-    let mut buf_reader = BufReader::new(input_file);
-    let mut deserialized = Deserializer::new(&mut buf_reader);
-    
-    // Deserialize directly using MessagePack deserializer
-    let labels: Labels = Deserialize::deserialize(&mut deserialized)?;
-
-    return Ok(labels);
-}
 
 
 pub fn generate_opponent_cluster_hand_strengths(round: usize, path_export: &str, path_opponent_cluster_labels: &str) {
@@ -47,7 +28,7 @@ pub fn generate_opponent_cluster_hand_strengths(round: usize, path_export: &str,
     > = vec![vec![]; 8];
 
     for (index, hand) in hands_preflop.iter().enumerate() {
-        clusters[labels_preflop.0[index] as usize].push(hand)
+        clusters[labels_preflop[index] as usize].push(hand)
     }
 
     // Prepare to flatten clusters
@@ -200,10 +181,8 @@ pub fn generate_opponent_cluster_hand_strengths(round: usize, path_export: &str,
             results.extend(opponent_cluster_hand_strengths_unflattened);
         }
 
-        save_opponent_cluster_hand_strengths_to_file(&results, round, batch_index, path_export)
-            .expect(format!("ERROR: Failed to save HSH for round {} batch #{}", round, batch_index).as_str());
-
-        results.clear();
+        save_opponent_cluster_hand_strengths_to_file(results, round, batch_index, path_export)
+            .expect(format!("ERROR: Failed to save OCHS for round {} batch #{}", round, batch_index).as_str());
 
         hand_loader.load_next_batch();
     }

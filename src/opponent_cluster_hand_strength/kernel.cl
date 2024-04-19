@@ -237,28 +237,23 @@ __kernel void simulate_poker_hands(
     copy_global_to_private(full_hand, hand_cards, 7); // Copy all player's cards
 
     int histogram_offset = hand_id * 8; // Output histogram for this hand has 8 entries (one for each cluster)
+    for (int i = 0; i < 8; i++) {
+        opponent_cluster_hand_strengths[histogram_offset + i] = 0;
+    }
+
     int player_score = evaluate_hand(full_hand, 7);
-
-    // printf("Our hand: ");
-    // for (int i = 0; i < 7; i++) {
-    //     printf("%d ", full_hand[i]);
-    // }
-    // printf("\n");
-
-    // printf("Our score: %d\n", player_score);
 
     for (int cluster_id = 0; cluster_id < 8; cluster_id++) {
         int start_idx = cluster_offsets[cluster_id];
         int cluster_size = cluster_sizes[cluster_id];
         int opponents_beaten = 0;
         int total_opponents = 0;
-        // printf("Entering cluster %d\n", cluster_id);
 
         for (int i = 0; i < cluster_size; i++) {
             uchar opponent_hand[7]; // Initialize or declare opponent's hand array here
             __global const uchar* opponent_cards = &cluster_hands[start_idx + i * 2]; // 2 cards per hand
 
-            // Correctly copy community cards first
+            // Copy community cards first
             for (int j = 0; j < 5; j++) {
                 opponent_hand[j+2] = full_hand[j+2]; // Copying community cards to opponent hand
             }
@@ -267,14 +262,7 @@ __kernel void simulate_poker_hands(
             opponent_hand[0] = opponent_cards[0];
             opponent_hand[1] = opponent_cards[1];
 
-            // printf("Opponent hand: ");
-            // for (int k = 0; k < 7; k++) {
-            //     printf("%d ", opponent_hand[k]);
-            // }
-            // printf("\n");
-
             int opponent_score = evaluate_hand(opponent_hand, 7);
-            // printf("Opponent score: %d\n", opponent_score);
             if (player_score > opponent_score) {
                 opponents_beaten++;
             }

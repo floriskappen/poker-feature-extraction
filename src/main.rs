@@ -9,6 +9,10 @@ mod hand_strength_histogram {
 mod opponent_cluster_hand_strength {
     pub mod generate;
     pub mod save;
+    pub mod load_labels;
+}
+mod proto {
+    include!("proto/build/_.rs");
 }
 
 use dotenv::dotenv;
@@ -24,7 +28,7 @@ fn main() {
     init_logger().expect("Failed to initialize logger");
     dotenv().ok();
     
-    generate_hand_strength_histograms(0, PATH_EXPORT);
+    generate_hand_strength_histograms(1, PATH_EXPORT);
 
     // generate_opponent_cluster_hand_strengths(3, PATH_EXPORT, PATH_OPPONENT_CLUSTER_LABELS);
 }

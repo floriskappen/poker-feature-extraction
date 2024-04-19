@@ -238,6 +238,11 @@ __kernel void simulate_poker_hands(
     uchar full_hand[7];
     int histogram_offset = hand_id * NUM_BINS;
 
+    // Caching or something weird can make it so these values are prefilled, so we need to reset them to 0
+    for (int i = 0; i < NUM_BINS; i++) {
+        histograms[histogram_offset + i] = 0;
+    }
+
     __global const uchar* hand_cards = &all_hands[hand_id * cards_per_hand];
 
     // Calculate the number of known community cards
@@ -290,6 +295,8 @@ __kernel void simulate_poker_hands(
 
         float hand_strength = (float)opponents_beaten / (float)total_opponent_hands;
         int bin_index = (int)(hand_strength * (NUM_BINS - 1));
+        // printf("Increasing in %d by 1\n", histogram_offset + bin_index);
+        // printf("histogram value: %d", histograms[histogram_offset + bin_index]);
         atomic_inc(&histograms[histogram_offset + bin_index]);
     }
 }

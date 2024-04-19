@@ -27,7 +27,6 @@ pub fn generate_hand_strength_histograms(round: usize, export_path: &str) {
     let kernel_container = KernelContainer::new(src);
     let max_work_group_size = kernel_container.device.max_wg_size().unwrap();
     let gpu_chunk_size = max_work_group_size * 32;
-    // let gpu_chunk_size = 10;
     log::info!("Set max group size to {}", gpu_chunk_size);
     
     for batch_index in 0..hand_loader.total_batches {
@@ -57,12 +56,6 @@ pub fn generate_hand_strength_histograms(round: usize, export_path: &str) {
                 .len(histograms.len())
                 .context(&kernel_container.context)
                 .build().unwrap();
-
-            histograms_buffer.cmd()
-                .queue(&kernel_container.queue)
-                .fill(0, None)
-                .enq()
-                .unwrap();
 
             // Generate a seed based on the current time
             let seed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32 + gpu_batch_index as u32;
@@ -127,10 +120,8 @@ pub fn generate_hand_strength_histograms(round: usize, export_path: &str) {
             results.extend(histograms_unflattened_normalized);
         }
 
-        save_hand_strength_histograms_to_file(&results, round, batch_index, export_path)
+        save_hand_strength_histograms_to_file(results, round, batch_index, export_path)
             .expect(format!("ERROR: Failed to save HSH for round {} batch #{}", round, batch_index).as_str());
-
-        results.clear();
 
         hand_loader.load_next_batch();
     }
