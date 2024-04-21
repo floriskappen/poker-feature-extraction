@@ -41,13 +41,23 @@ impl HandLoader {
             .filter(|file_name| file_name != "")
             .collect_vec();
 
-        let round_file_names: Vec<String> = file_names.iter()
+        let mut round_filenames: Vec<String> = file_names.iter()
             .cloned()
             .filter(|file_name| file_name.starts_with(format!("round_{}_batch_", round).as_str()))
             .collect();
+        round_filenames.sort_by_key(|filename| {
+            filename
+                .split('_')
+                .nth(3)  // This gets the part of the filename with the batch number
+                .and_then(|s| s.split('.').next())  // Remove the file extension
+                .and_then(|num| num.parse::<i32>().ok())  // Parse the number part as i32
+                .unwrap_or(0)  // Default to 0 if any parsing fails
+        });
 
-        let total_batches = round_file_names.len();
-        let first_batch_file_name = round_file_names.iter()
+        println!("round_filenames: {:?}", round_filenames);
+
+        let total_batches = round_filenames.len();
+        let first_batch_file_name = round_filenames.iter()
             .find(|&file_name| file_name == &format!("round_{}_batch_0.bin", round));
 
         if let Some(first_batch_file_name) = first_batch_file_name {
@@ -59,7 +69,7 @@ impl HandLoader {
                 total_batches,
                 current_batch: 0,
                 folder_path,
-                file_names: round_file_names,
+                file_names: round_filenames,
                 round,
                 current_batch_hands
             })
@@ -74,6 +84,7 @@ impl HandLoader {
             let new_file_name = self.file_names.iter()
                 .find(|&file_name| file_name == &format!("round_{}_batch_{}.bin", self.round, new_batch))
                 .expect(format!("Could not find file for round {} batch {}", self.round, new_batch).as_str());
+            println!("Loading next batch: {}", new_file_name);
             let file_path = format!("{}/{}", &self.folder_path, new_file_name);
             let current_batch_hands: Vec<Vec<u8>> = load_data(&file_path)
                 .expect(format!("Could not load file for round {} batch {}", self.round, new_batch).as_str())

@@ -81,7 +81,7 @@ pub fn generate_hand_strength_histograms(round: usize, export_path: &str) {
                     .enq()
                     .unwrap();
             }
-            
+
             kernel_container.queue.finish().unwrap();
 
             // Read the data back into a Rust vector
