@@ -27,7 +27,7 @@ export CANONICAL_HANDS_FOLDER_PATH=/path/to/canonical/hands
 The opponent-cluster label file should be available at:
 
 ```
-imports/labels_round_0_initialization_772.bin
+imports/labels_round_0_initialization_237.bin
 ```
 
 ## Building and Running
